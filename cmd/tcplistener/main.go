@@ -54,23 +54,9 @@ func main() {
 			log.Fatal("error", "error", err)
 		}
 
-		data = data[:n]
-
 		for line := range getLinesChannel(conn) {
 			fmt.Printf("read: %s\n", line)
 		}
 
-		if i := bytes.IndexByte(data, '\n'); i != -1 {
-			str += string(data[:i])
-			data = data[i+1:]
-			fmt.Printf("read: %s\n", str)
-			str = ""
-		}
-
-		str += string(data)
-	}
-
-	if len(str) != 0 {
-		fmt.Printf("read: %s\n", str)
 	}
 }
