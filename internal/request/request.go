@@ -146,11 +146,9 @@ outer:
 
 		case StateBody:
 			length := getInt(r.Headers, "Content-Length", 0)
-			fmt.Printf("Length: %d\n", length)
+
 			remaining := min(length-len(r.Body), len(currentData))
-			fmt.Printf("Remaining: %s", string(currentData[:remaining]))
 			r.Body = append(r.Body, currentData[:remaining]...)
-			fmt.Printf("Body: %s", string(r.Body))
 			read += remaining
 
 			if len(r.Body) == length {
