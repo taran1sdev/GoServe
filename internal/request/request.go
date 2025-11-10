@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 
 	"boot.taran1s/internal/headers"
 )
@@ -25,6 +26,25 @@ type Request struct {
 	Body        []byte
 }
 
+func (r *Request) hasBody() bool {
+	length := getInt(r.Headers, "content-length", 0)
+	return length > 0
+}
+
+func getInt(headers headers.Headers, name string, defaultValue int) int {
+	valueStr, ok := headers.Get(name)
+	if !ok {
+		return defaultValue
+	}
+
+	value, err := strconv.Atoi(valueStr)
+	if err != nil {
+		return defaultValue
+	}
+
+	return value
+}
+
 func newRequest() *Request {
 	return &Request{
 		State:   StateInit,
@@ -42,8 +62,9 @@ type parserState int
 const (
 	StateInit    parserState = 0
 	StateHeaders parserState = 1
-	StateDone    parserState = 2
-	StateError   parserState = 3
+	StateBody    parserState = 2
+	StateDone    parserState = 3
+	StateError   parserState = 4
 )
 
 func parseRequestLine(b []byte) (*RequestLine, int, error) {
@@ -83,13 +104,13 @@ func (r *Request) parse(data []byte) (int, error) {
 outer:
 	for {
 		currentData := data[read:]
-
+		if len(currentData) == 0 {
+			break outer
+		}
 		switch r.State {
 		case StateError:
-
 			return 0, REQUEST_IN_ERROR_STATE
 		case StateInit:
-
 			rl, n, err := parseRequestLine(currentData)
 			if err != nil {
 				return 0, err
@@ -104,7 +125,6 @@ outer:
 
 			r.State = StateHeaders
 		case StateHeaders:
-
 			n, done, err := r.Headers.Parse(currentData)
 			if err != nil {
 				return 0, err
@@ -117,8 +137,26 @@ outer:
 			read += n
 
 			if done {
+				if r.hasBody() {
+					r.State = StateBody
+				} else {
+					r.State = StateDone
+				}
+			}
+
+		case StateBody:
+			length := getInt(r.Headers, "Content-Length", 0)
+			fmt.Printf("Length: %d\n", length)
+			remaining := min(length-len(r.Body), len(currentData))
+			fmt.Printf("Remaining: %s", string(currentData[:remaining]))
+			r.Body = append(r.Body, currentData[:remaining]...)
+			fmt.Printf("Body: %s", string(r.Body))
+			read += remaining
+
+			if len(r.Body) == length {
 				r.State = StateDone
 			}
+
 		case StateDone:
 			break outer
 		default:
