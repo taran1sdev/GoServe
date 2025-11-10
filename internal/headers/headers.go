@@ -11,38 +11,53 @@ func NewHeaders() Headers {
 	return make(Headers)
 }
 
-var MALFORMED_HEADERS = fmt.Errorf("Malformed HTTP Headers")
+var MALFORMED_FIELD_LINE = fmt.Errorf("Malformed Field Line")
+var MALFORMED_FIELD_NAME = fmt.Errorf("Malformed Field Name")
+
+func parseHeader(fieldLine []byte) (string, string, error) {
+	parts := bytes.SplitN(fieldLine, []byte(":"), 2)
+	if len(parts) != 2 {
+		return "", "", MALFORMED_FIELD_LINE
+	}
+
+	if bytes.HasSuffix(parts[0], []byte(" ")) {
+		return "", "", MALFORMED_FIELD_NAME
+	}
+
+	name := bytes.TrimSpace(parts[0])
+	value := bytes.TrimSpace(parts[1])
+
+	return string(name), string(value), nil
+}
 
 var SEPARATOR = []byte("\r\n")
 
-func (h Headers) Parse(data []byte) (n int, done bool, err error) {
+func (h Headers) Parse(data []byte) (int, bool, error) {
 	// No CLRF means we are awaiting data
-	idx := bytes.Index(data, SEPARATOR)
+	read := 0
+	done := false
 
-	if idx == -1 {
-		return 0, false, nil
+	for {
+		idx := bytes.Index(data[read:], SEPARATOR)
+
+		if idx == -1 {
+			break
+		}
+
+		if idx == 0 {
+			done = true
+			read += len(SEPARATOR)
+			break
+		}
+
+		name, value, err := parseHeader(data[read : read+idx])
+		if err != nil {
+			return 0, done, err
+		}
+
+		read += idx + len(SEPARATOR)
+		h[name] = value
 	}
 
-	// CLRF at start means no headers to parse
-	if idx == 0 {
-		return 0, true, nil
-	}
-
-	line := data[:idx]
-
-	f, v, found := bytes.Cut(line, []byte(":"))
-	// If we have more that one : whitespace after field header is invalid
-	if !found || bytes.HasSuffix(f, []byte(" ")) {
-		return 0, false, MALFORMED_HEADERS
-	}
-
-	// Remove any whitespace
-	f = bytes.TrimSpace(f)
-	v = bytes.TrimSpace(v)
-
-	// Add to our headers map
-	h[string(f)] = string(v)
-
-	return idx + len(SEPARATOR), false, nil
-
+	return read, done, nil
 }

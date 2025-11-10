@@ -15,8 +15,20 @@ func TestHeaderParse(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, headers)
 	assert.Equal(t, "localhost:42069", headers["Host"])
-	assert.Equal(t, 23, n)
-	assert.False(t, done)
+	assert.Equal(t, 25, n)
+	assert.True(t, done)
+
+	// Test: Valid multi header
+	headers = NewHeaders()
+	data = []byte("Host: localhost:42069\r\nContent-Type: application/json\r\nContent-Length: 42069\r\n\r\n")
+	n, done, err = headers.Parse(data)
+	require.NoError(t, err)
+	require.NotNil(t, headers)
+	assert.Equal(t, "localhost:42069", headers["Host"])
+	assert.Equal(t, "application/json", headers["Content-Type"])
+	assert.Equal(t, "42069", headers["Content-Length"])
+	assert.Equal(t, 80, n)
+	assert.True(t, done)
 
 	// Test: Invalid spacing
 	headers = NewHeaders()
