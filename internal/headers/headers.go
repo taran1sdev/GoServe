@@ -58,6 +58,10 @@ func parseHeader(fieldLine []byte) (string, string, error) {
 
 var SEPARATOR = []byte("\r\n")
 
+func (h *Headers) GetAll() map[string]string {
+	return h.headers
+}
+
 func (h *Headers) Get(name string) string {
 	return h.headers[strings.ToLower(name)]
 }
