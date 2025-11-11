@@ -3,7 +3,6 @@ package response
 import (
 	"fmt"
 	"io"
-	"net"
 	"strconv"
 
 	"boot.taran1s/internal/headers"
@@ -42,10 +41,9 @@ type Writer struct {
 }
 
 // do we pass the connection to write here?
-func NewWriter(conn net.Conn) *Writer {
+func NewWriter() *Writer {
 	return &Writer{
 		writerState: stateStatus,
-		writer:      conn,
 	}
 }
 
@@ -63,7 +61,7 @@ func (w *Writer) WriteStatusLine(statusCode StatusCode) error {
 	return nil
 }
 
-func GetDefaultHeaders(contentLen int) headers.Headers {
+func GetDefaultHeaders(contentLen int, contentType string) headers.Headers {
 	h := headers.NewHeaders()
 
 	h.Set("Content-Length", strconv.Itoa(contentLen))
@@ -103,7 +101,7 @@ func (w *Writer) WriteBody(b []byte) (int, error) {
 	}
 	bytes, err := w.writer.Write(b)
 	if err != nil {
-		return 0, err
+		return err
 	}
 	w.writerState = stateDone
 	return bytes, nil

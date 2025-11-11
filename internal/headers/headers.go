@@ -78,6 +78,16 @@ func (h *Headers) Set(name, value string) {
 	}
 }
 
+func (h *Headers) Replace(name, value string) {
+	name = strings.ToLower(name)
+
+	if _, ok := h.headers[name]; ok {
+		h.headers[name] = value
+	} else {
+		h.Set(name, value)
+	}
+}
+
 func (h *Headers) Parse(data []byte) (int, bool, error) {
 	// No CLRF means we are awaiting data
 	read := 0

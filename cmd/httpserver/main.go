@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io"
+	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -14,25 +14,65 @@ import (
 
 const port = 8888
 
-func handleRequest(w io.Writer, req *request.Request) *server.HandlerError {
-	hErr := &server.HandlerError{}
+func get200() []byte {
+	return []byte(`
+	<html>
+  <head>
+    <title>200 OK</title>
+  </head>
+  <body>
+    <h1>Success!</h1>
+    <p>Your request was an absolute banger.</p>
+  </body>
+</html>`)
+}
+
+func get400() []byte {
+	return []byte(`
+	<html>
+  <head>
+    <title>400 Bad Request</title>
+  </head>
+  <body>
+    <h1>Bad Request</h1>
+    <p>Your request honestly kinda sucked.</p>
+  </body>
+</html>`)
+}
+
+func get500() []byte {
+	return []byte(`
+	<html>
+  <head>
+    <title>500 Internal Server Error</title>
+  </head>
+  <body>
+    <h1>Internal Server Error</h1>
+    <p>Okay, you know what? This one is on me.</p>
+  </body>
+</html>`)
+}
+
+func handleRequest(w *response.Writer, req *request.Request) {
+	// This is just for testing but probably a better way to implement this?
+	h := response.GetDefaultHeaders(0)
+	body := get200()
+	status := response.StatusOK
+
 	switch req.RequestLine.RequestTarget {
 	case "/yourproblem":
-		hErr.StatusCode = response.StatusBadRequest
-		hErr.Message = "Your problem not my problem\n"
+		body = get400()
+		status = response.StatusBadRequest
 	case "/myproblem":
-		hErr.StatusCode = response.StatusInternalServerError
-		hErr.Message = "Whoopsie, my bad\n"
-	default:
-		_, err := w.Write([]byte("All good\n"))
-		if err != nil {
-			hErr.StatusCode = response.StatusInternalServerError
-			hErr.Message = "Whoopsie, my bad\n"
-		} else {
-			hErr = nil
-		}
+		body = get500()
+		status = response.StatusInternalServerError
 	}
-	return hErr
+
+	w.WriteStatusLine(status)
+	h.Replace("Content-Length", fmt.Sprintf("%d", len(body)))
+	h.Replace("Content-Type", "text/html")
+	w.WriteHeaders(h)
+	w.WriteBody(body)
 }
 
 func main() {
