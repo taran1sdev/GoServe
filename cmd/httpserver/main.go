@@ -56,6 +56,14 @@ func get500() []byte {
 </html>`)
 }
 
+func getVideo() []byte {
+	v, err := os.ReadFile("assets/vim.mp4")
+	if err != nil {
+		return nil
+	}
+	return v
+}
+
 func proxyRequest(w *response.Writer, endpoint string) {
 	h := response.GetDefaultHeaders(0)
 
@@ -110,6 +118,7 @@ func proxyRequest(w *response.Writer, endpoint string) {
 func handleRequest(w *response.Writer, req *request.Request) {
 	// This is just for testing but probably a better way to implement this?
 	h := response.GetDefaultHeaders(0)
+	h.Replace("Content-Type", "text/html")
 	body := get200()
 	status := response.StatusOK
 
@@ -120,6 +129,9 @@ func handleRequest(w *response.Writer, req *request.Request) {
 	case "/myproblem":
 		body = get500()
 		status = response.StatusInternalServerError
+	case "/video":
+		body = getVideo()
+		h.Replace("Content-Type", "video/mp4")
 	}
 
 	// To test chunked encoding we will proxy requests to httpbin.org
@@ -132,7 +144,6 @@ func handleRequest(w *response.Writer, req *request.Request) {
 
 	w.WriteStatusLine(status)
 	h.Replace("Content-Length", fmt.Sprintf("%d", len(body)))
-	h.Replace("Content-Type", "text/html")
 	w.WriteHeaders(h)
 	w.WriteBody(body)
 }
