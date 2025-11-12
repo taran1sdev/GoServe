@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"boot.taran1s/internal/request"
@@ -53,6 +55,41 @@ func get500() []byte {
 </html>`)
 }
 
+func proxyRequest(w *response.Writer, endpoint string) {
+	h := response.GetDefaultHeaders(0)
+
+	resp, err := http.Get("https://httpbin.org" + endpoint)
+
+	if err != nil {
+		w.WriteStatusLine(response.StatusInternalServerError)
+		body := get500()
+		h.Replace("Content-Type", "text/html")
+		h.Replace("Content-Length", fmt.Sprintf("%d", len(body)))
+		w.WriteHeaders(h)
+		w.WriteBody(body)
+	}
+
+	w.WriteStatusLine(response.StatusOK)
+	h.Delete("Content-Length")
+	h.Set("Transfer-Encoding", "chunked")
+	h.Replace("Content-Type", "text/plain")
+	w.WriteHeaders(h)
+
+	for {
+		data := make([]byte, 1024)
+		n, err := resp.Body.Read(data)
+		if err != nil {
+			break
+		}
+
+		w.WriteBody([]byte(fmt.Sprintf("%x\r\n", n)))
+		w.WriteBody(data[:n])
+		w.WriteBody([]byte("\r\n"))
+	}
+	w.WriteBody([]byte("0\r\n\r\n"))
+	return
+}
+
 func handleRequest(w *response.Writer, req *request.Request) {
 	// This is just for testing but probably a better way to implement this?
 	h := response.GetDefaultHeaders(0)
@@ -66,6 +103,14 @@ func handleRequest(w *response.Writer, req *request.Request) {
 	case "/myproblem":
 		body = get500()
 		status = response.StatusInternalServerError
+	}
+
+	// To test chunked encoding we will proxy requests to httpbin.org
+	if strings.HasPrefix(req.RequestLine.RequestTarget, "/httpbin") {
+		endpoint := strings.TrimPrefix(req.RequestLine.RequestTarget, "/httpbin")
+		fmt.Println("Proxying request...")
+		proxyRequest(w, endpoint)
+		return
 	}
 
 	w.WriteStatusLine(status)

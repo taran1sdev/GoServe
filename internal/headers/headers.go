@@ -88,6 +88,12 @@ func (h *Headers) Replace(name, value string) {
 	}
 }
 
+func (h *Headers) Delete(name string) {
+	if _, ok := h.headers[name]; ok {
+		delete(h.headers, name)
+	}
+}
+
 func (h *Headers) Parse(data []byte) (int, bool, error) {
 	// No CLRF means we are awaiting data
 	read := 0

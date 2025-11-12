@@ -105,6 +105,14 @@ func (w *Writer) WriteBody(b []byte) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	w.writerState = stateDone
+
 	return bytes, nil
+}
+
+func (w *Writer) WriteChunkedBody(b []byte) (int, error) {
+	return 0, nil
+}
+
+func (w *Writer) WriteChunkedBodyDone() (int, error) {
+	return 0, nil
 }
