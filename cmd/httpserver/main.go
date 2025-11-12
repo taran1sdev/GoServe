@@ -77,16 +77,13 @@ func proxyRequest(w *response.Writer, endpoint string) {
 
 	for {
 		data := make([]byte, 1024)
-		n, err := resp.Body.Read(data)
+		_, err := resp.Body.Read(data)
 		if err != nil {
 			break
 		}
-
-		w.WriteBody([]byte(fmt.Sprintf("%x\r\n", n)))
-		w.WriteBody(data[:n])
-		w.WriteBody([]byte("\r\n"))
+		w.WriteChunkedBody(data)
 	}
-	w.WriteBody([]byte("0\r\n\r\n"))
+	w.WriteChunkedBodyDone()
 	return
 }
 

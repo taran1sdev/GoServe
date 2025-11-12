@@ -106,13 +106,37 @@ func (w *Writer) WriteBody(b []byte) (int, error) {
 		return 0, err
 	}
 
+	w.writerState = stateDone
 	return bytes, nil
 }
 
+// This works like write body except it doesn't change the writer state
 func (w *Writer) WriteChunkedBody(b []byte) (int, error) {
-	return 0, nil
+	if w.writerState != stateBody {
+		return 0, fmt.Errorf("Must write status line and headers before the body")
+	}
+	n, lErr := w.writer.Write([]byte(fmt.Sprintf("%x\r\n", len(b))))
+	if lErr != nil {
+		return 0, fmt.Errorf("Failed to write chunk length to body")
+	}
+
+	bytes, dErr := w.writer.Write(append(b, []byte("\r\n")...))
+	if dErr != nil {
+		return n, fmt.Errorf("Failed to write chunked data to body")
+	}
+
+	return n + bytes, nil
 }
 
 func (w *Writer) WriteChunkedBodyDone() (int, error) {
-	return 0, nil
+	if w.writerState != stateBody {
+		return 0, fmt.Errorf("This should never happen...")
+	}
+
+	bytes, err := w.writer.Write([]byte("0\r\n\r\n"))
+	if err != nil {
+		return 0, fmt.Errorf("Failed to write end of chunked data to body")
+	}
+
+	return bytes, nil
 }
