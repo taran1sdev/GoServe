@@ -5,8 +5,8 @@ import (
 	"log"
 	"net"
 
-	"boot.taran1s/internal/request"
-	"boot.taran1s/internal/response"
+	"go.serve/internal/request"
+	"go.serve/internal/response"
 )
 
 type Server struct {

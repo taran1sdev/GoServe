@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	"boot.taran1s/internal/request"
+	"go.serve/internal/request"
 )
 
 func main() {

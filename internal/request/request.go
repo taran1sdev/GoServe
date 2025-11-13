@@ -6,7 +6,7 @@ import (
 	"io"
 	"strconv"
 
-	"boot.taran1s/internal/headers"
+	"go.serve/internal/headers"
 )
 
 type RequestLine struct {

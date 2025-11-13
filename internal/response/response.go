@@ -6,7 +6,7 @@ import (
 	"net"
 	"strconv"
 
-	"boot.taran1s/internal/headers"
+	"go.serve/internal/headers"
 )
 
 type StatusCode int

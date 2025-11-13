@@ -1,6 +1,6 @@
-module boot.taran1s
+module go.serve
 
-go 1.25.3
+go 1.25.4
 
 require github.com/stretchr/testify v1.11.1
 

@@ -10,9 +10,9 @@ import (
 	"strings"
 	"syscall"
 
-	"boot.taran1s/internal/request"
-	"boot.taran1s/internal/response"
-	"boot.taran1s/internal/server"
+	"go.serve/internal/request"
+	"go.serve/internal/response"
+	"go.serve/internal/server"
 )
 
 const port = 8888
